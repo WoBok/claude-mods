@@ -1,1 +1,1 @@
-{ "name": "usage-band", "version": "0.2.0", "description": "Shows context and rate-limit usage in the prompt footer", "author": { "name": "WoBok" } }
+{ "name": "usage-band", "version": "0.2.1", "description": "Shows context and rate-limit usage in the prompt footer", "author": { "name": "WoBok" } }

@@ -95,6 +95,13 @@ export const register: Register = on => {
     return next(e)
   })
 
+  // A compaction clears the context reading; redraw so the estimate replaces the old figure
+  on('session.compact', async ($, e, next) => {
+    const result = await next(e)
+    $.ui.invalidate('ui.render')
+    return result
+  })
+
   // The desktop footer strip draws this site only from a tree of Text, at most 24ch wide
   on('ui.render', { component: 'SessionMode' }, async ($, e, next) => {
     const now = Date.now()
@@ -103,8 +110,10 @@ export const register: Register = on => {
     const rateLimits = usage.rateLimits.length > 0 ? usage.rateLimits : fresh(cachedLimits, now)
     const parts: string[] = []
 
-    if (context.percent !== undefined) {
-      parts.push(`⛁ ${context.percent}%`)
+    // No reading until the first reply after a start or a compaction; estimate it locally as /context does
+    const contextPercent = context.percent ?? (await $.session.usage({ breakdown: 'summary' })).context.breakdown?.percentage
+    if (contextPercent !== undefined) {
+      parts.push(`⛁ ${contextPercent}%`)
     }
 
     const fiveHour = findLimit(rateLimits, 'five_hour')
