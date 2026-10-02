@@ -1,17 +1,13 @@
 import type { Register, SessionRateLimit } from 'claude-code'
 
-// Minutes east of UTC, read from the host once (the module may run in UTC)
-let offsetMinutes = -new Date().getTimezoneOffset()
-
-const pad = (n: number) => String(n).padStart(2, '0')
-
-// Shift a timestamp into local wall-clock time, read back with the UTC getters
-const local = (ms: number) => new Date(ms + offsetMinutes * 60_000)
-
-const timeOf = (d: Date) => `${pad(d.getUTCHours())}:${pad(d.getUTCMinutes())}`
-
 const findLimit = (limits: SessionRateLimit[], kind: string) =>
   limits.find(limit => limit.kind === kind)
+
+// Hours until a window resets, to one decimal: 4.9h, 0.3h; nothing once it has passed
+const hoursLeft = (resetsAt: string, now: number) => {
+  const ms = Date.parse(resetsAt) - now
+  return ms > 0 ? `${(ms / 3_600_000).toFixed(1)}h` : undefined
+}
 
 // The last reading any session saw, shown until this session gets its own
 const CACHE_KEY = 'rateLimits'
@@ -48,16 +44,6 @@ const fresh = (limits: SessionRateLimit[], now: number): SessionRateLimit[] =>
 export const register: Register = on => {
   on('session.start', async ($, e, next) => {
     try {
-      const { exitCode, stdout } = await $.process.run(['date', '+%z'], { timeoutMs: 3000 })
-      const match = /^([+-])(\d{2})(\d{2})$/.exec(stdout.trim())
-      if (exitCode === 0 && match) {
-        const minutes = Number(match[2]) * 60 + Number(match[3])
-        offsetMinutes = match[1] === '-' ? -minutes : minutes
-      }
-    } catch {
-      // Keep the runtime's own offset
-    }
-    try {
       const stored = await $.store.get(CACHE_KEY)
       if (Array.isArray(stored)) {
         cachedLimits = stored as SessionRateLimit[]
@@ -66,6 +52,9 @@ export const register: Register = on => {
       // No cache yet
     }
     $.ui.invalidate('ui.render')
+
+    // The hours left count down between replies
+    $.clock.every(60_000, () => $.ui.invalidate('ui.render'))
 
     // Read the limits before the first reply carries any; the secret stays with the host.
     // Not awaited, so the session starts without waiting on the network
@@ -106,11 +95,12 @@ export const register: Register = on => {
     return next(e)
   })
 
-  // The desktop footer strip draws this site only from a tree of Text, in its own type
+  // The desktop footer strip draws this site only from a tree of Text, at most 24ch wide
   on('ui.render', { component: 'SessionMode' }, async ($, e, next) => {
+    const now = Date.now()
     const usage = await $.session.usage()
     const { context } = usage
-    const rateLimits = usage.rateLimits.length > 0 ? usage.rateLimits : fresh(cachedLimits, Date.now())
+    const rateLimits = usage.rateLimits.length > 0 ? usage.rateLimits : fresh(cachedLimits, now)
     const parts: string[] = []
 
     if (context.percent !== undefined) {
@@ -119,16 +109,18 @@ export const register: Register = on => {
 
     const fiveHour = findLimit(rateLimits, 'five_hour')
     if (fiveHour) {
-      let text = `5h: ${Math.round(fiveHour.percentUsed)}%`
-      if (fiveHour.resetsAt) {
-        text += ` ${timeOf(local(Date.parse(fiveHour.resetsAt)))}`
+      // The stopwatch, asked for in its text style (U+FE0E) so it is never the colour emoji
+      let text = `⏱\uFE0E ${Math.round(fiveHour.percentUsed)}%`
+      const left = fiveHour.resetsAt ? hoursLeft(fiveHour.resetsAt, now) : undefined
+      if (left) {
+        text += ` ${left}`
       }
       parts.push(text)
     }
 
     const weekly = findLimit(rateLimits, 'seven_day')
     if (weekly) {
-      parts.push(`W: ${Math.round(weekly.percentUsed)}%`)
+      parts.push(`▦ ${Math.round(weekly.percentUsed)}%`)
     }
 
     if (parts.length === 0) {
@@ -138,6 +130,7 @@ export const register: Register = on => {
     const { Text } = $.ui.resolve(e)
     const modes = e.props.modes.length > 0 ? ` & ${e.props.modes.join(' & ')}` : ''
 
-    return Text({ children: [parts.join(' · ') + modes] })
+    // The theme's primary ink, as the model picker beside it
+    return Text({ color: 'text', children: [parts.join(' | ') + modes] })
   })
 }

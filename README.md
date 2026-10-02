@@ -25,7 +25,7 @@ claude plugin marketplace add WoBok/claude-mods
 在输入框下方的底栏中显示：
 
 ```
-⛁ 25% · 5h: 17% 13:00 · W: 86%
+⛁ 16% | ⏱ 15% 1.5h | ▦ 90%
 ```
 
 ![usage-band](assets/usage-band.png)
@@ -33,8 +33,8 @@ claude plugin marketplace add WoBok/claude-mods
 | 字段 | 含义 |
 | --- | --- |
 | `⛁` | 上下文已用比例 |
-| `5h` | 5 小时限额已用比例及重置时间 |
-| `W` | 每周限额已用比例 |
+| `⏱` | 5 小时限额已用比例及距重置的剩余小时数 |
+| `▦` | 每周限额已用比例 |
 
 限额数据仅在使用 Pro / Max 订阅登录时可用。
 
