@@ -112,7 +112,12 @@ export const register: Register = on => {
     const now = Date.now()
     const usage = await $.session.usage()
     const { context } = usage
-    const rateLimits = usage.rateLimits.length > 0 ? usage.rateLimits : fresh(cachedLimits, now)
+    const cached = fresh(cachedLimits, now)
+    // Each window from the live reading, else the cache; once either has a reading, a window
+    // left out has not started since its reset, so nothing of it is used yet
+    const hasReading = usage.rateLimits.length > 0 || cached.length > 0
+    const limitOf = (kind: string): SessionRateLimit | undefined =>
+      findLimit(usage.rateLimits, kind) ?? findLimit(cached, kind) ?? (hasReading ? { kind, percentUsed: 0 } : undefined)
     const parts: string[] = []
 
     // No reading until the first reply after a start or a compaction; estimate it locally as /context does
@@ -121,7 +126,7 @@ export const register: Register = on => {
       parts.push(`⛁ ${contextPercent}%`)
     }
 
-    const fiveHour = findLimit(rateLimits, 'five_hour')
+    const fiveHour = limitOf('five_hour')
     if (fiveHour) {
       // The stopwatch, asked for in its text style (U+FE0E) so it is never the colour emoji
       const icon = isWindows ? '◷' : '⏱\uFE0E'
@@ -133,7 +138,7 @@ export const register: Register = on => {
       parts.push(text)
     }
 
-    const weekly = findLimit(rateLimits, 'seven_day')
+    const weekly = limitOf('seven_day')
     if (weekly) {
       parts.push(`▦ ${Math.round(weekly.percentUsed)}%`)
     }
