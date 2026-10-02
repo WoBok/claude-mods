@@ -1,0 +1,4 @@
+.DS_Store
+.claude-plugin/types/
+usage-band/.claude-plugin/types/
+usage-band/tsconfig.json

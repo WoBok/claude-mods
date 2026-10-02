@@ -1,0 +1,16 @@
+{
+  "name": "wobok-mods",
+  "owner": {
+    "name": "WoBok"
+  },
+  "plugins": [
+    {
+      "name": "usage-band",
+      "source": "./usage-band",
+      "description": "Shows context and rate-limit usage in the prompt footer"
+    }
+  ],
+  "metadata": {
+    "description": "Claude Code mods by WoBok"
+  }
+}
