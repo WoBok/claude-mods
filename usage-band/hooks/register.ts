@@ -16,6 +16,9 @@ let cachedLimits: SessionRateLimit[] = []
 // The usage endpoint the app's own meter reads; the host attaches the credential
 const USAGE_URL = 'https://api.anthropic.com/api/oauth/usage'
 
+// Windows draws the stopwatch large, so it gets a clock face instead; told apart by its drive or share path
+let isWindows = false
+
 // The endpoint answers { five_hour: { utilization, resets_at }, seven_day: { ... } }
 const parseUsage = (body: unknown): SessionRateLimit[] => {
   const limits: SessionRateLimit[] = []
@@ -43,6 +46,8 @@ const fresh = (limits: SessionRateLimit[], now: number): SessionRateLimit[] =>
 
 export const register: Register = on => {
   on('session.start', async ($, e, next) => {
+    isWindows = /^([A-Za-z]:|\\\\)/.test(e.cwd)
+
     try {
       const stored = await $.store.get(CACHE_KEY)
       if (Array.isArray(stored)) {
@@ -119,7 +124,8 @@ export const register: Register = on => {
     const fiveHour = findLimit(rateLimits, 'five_hour')
     if (fiveHour) {
       // The stopwatch, asked for in its text style (U+FE0E) so it is never the colour emoji
-      let text = `⏱\uFE0E ${Math.round(fiveHour.percentUsed)}%`
+      const icon = isWindows ? '◷' : '⏱\uFE0E'
+      let text = `${icon} ${Math.round(fiveHour.percentUsed)}%`
       const left = fiveHour.resetsAt ? hoursLeft(fiveHour.resetsAt, now) : undefined
       if (left) {
         text += ` ${left}`
