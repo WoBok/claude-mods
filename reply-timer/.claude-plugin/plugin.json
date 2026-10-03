@@ -1,0 +1,1 @@
+{ "name": "reply-timer", "version": "0.1.0", "description": "Shows each turn's duration and finish time below the reply", "author": { "name": "WoBok" }, "types": "./types/index.d.ts" }

@@ -17,6 +17,7 @@ claude plugin marketplace add WoBok/claude-mods
 | Mod | 说明 | 安装 |
 | --- | --- | --- |
 | [usage-band](#usage-band) | 在底栏显示上下文与用量限额 | `claude plugin install usage-band@wobok-mods` |
+| [reply-timer](#reply-timer) | 在每轮回复末尾显示耗时与完成时间 | `claude plugin install reply-timer@wobok-mods` |
 
 安装后新开会话即可生效。
 
@@ -37,6 +38,21 @@ claude plugin marketplace add WoBok/claude-mods
 | `▦` | 每周限额已用比例 |
 
 限额数据仅在使用 Pro / Max 订阅登录时可用。
+
+## reply-timer
+
+在每轮回复的末尾显示：
+
+```
+1m 23s · 14:05
+```
+
+![reply-timer](assets/reply-timer.png)
+
+| 字段 | 含义 |
+| --- | --- |
+| `1m 23s` | 本轮耗时 |
+| `14:05` | 本轮完成时间 |
 
 ## 更新与卸载
 

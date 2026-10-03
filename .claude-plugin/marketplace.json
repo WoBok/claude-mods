@@ -8,6 +8,11 @@
       "name": "usage-band",
       "source": "./usage-band",
       "description": "Shows context and rate-limit usage in the prompt footer"
+    },
+    {
+      "name": "reply-timer",
+      "source": "./reply-timer",
+      "description": "Shows each turn's duration and finish time below the reply"
     }
   ],
   "metadata": {
